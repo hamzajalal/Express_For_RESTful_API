@@ -16,16 +16,12 @@ app.get('/api/movies', (req, res) => {
 
 
 app.post('/api/movies', (req, res) => {
-    const schema = {
-        name: Joi.string().min(2).required()
-    };
-
-    const result = Joi.validate(req.body, schema);
-    if (result.error) {
-        //400 Bad Request
-        res.status(400).send(result.error.details[0].message);
+    const { error } = validateMovie(req.body);
+    // If invalid, return 400 - Bad Request
+    if (error) {
+        res.status(400).send(error.details[0].message);
         return;
-    } 
+    }
 
     const movie = {
         id: movies.length + 1,
@@ -41,7 +37,34 @@ app.get('/api/movies/:id', (req, res) => {
     if(!movie) res.status(404).send('The movie with the given Id was not found.');
     res.send(movie);
 });
-// app.put()
+
+
+app.put('/api/movies/:id', (req,res) => {
+    // Look for the movie
+    const movie = movies.find(m => m.id === parseInt(req.params.id));
+    // If not existing, then return 404
+    if(!movie) res.status(404).send('The movie with the given Id was not found.');
+    
+    // Validate
+    const { error } = validateMovie(req.body);
+    // If invalid, return 400 - Bad Request
+    if (error) {
+        res.status(400).send(error.details[0].message);
+        return;
+    }     
+    // Update the Movie
+    movie.name = req.body.name;
+    // Return the updated movie
+    res.send(movie);
+});
+
+function validateMovie(movie) {
+    const schema = {
+        name: Joi.string().min(2).required()
+    };
+
+    return Joi.validate(movie, schema);
+}
 // app.delete()
 
 const port = process.env.PORT || 3000; //export PORT=5000
